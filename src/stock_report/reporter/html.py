@@ -347,6 +347,14 @@ def generate_report(report_date: date | None = None) -> Path:
     except FileNotFoundError:
         lifecycle_data = []
 
+    # 精度データ
+    from stock_report.analyzer.accuracy import compute_accuracy
+    accuracy_data = compute_accuracy().to_dict("records") if compute_accuracy is not None else []
+    try:
+        accuracy_data = compute_accuracy().to_dict("records")
+    except Exception:
+        accuracy_data = []
+
     # ウォッチリスト・テーゼチェック
     from stock_report.watchlist import get_holdings, get_watching, check_thesis
     thesis_alerts = check_thesis(report_date)
@@ -388,6 +396,7 @@ def generate_report(report_date: date | None = None) -> Path:
         signal_table_c_html=_build_signal_table(signals, name_map, "screen_c"),
         signal_table_conv_html=_build_signal_table(signals, name_map, "convergence"),
         convergence_count=convergence_count,
+        accuracy_data=accuracy_data,
         scatter_chart=scatter_chart,
         lifecycle_data=lifecycle_data,
         generated_at=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),

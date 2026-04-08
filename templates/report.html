@@ -273,6 +273,28 @@
 </div>
 {% endif %}
 
+<!-- 3.5 精度検証 -->
+{% if accuracy_data %}
+<h2>Screen Accuracy (Backtest)</h2>
+<table>
+  <thead>
+    <tr><th>Screen</th><th>Signals</th><th>Win% 5D</th><th>Win% 10D</th><th>Win% 20D</th><th>Avg 10D</th></tr>
+  </thead>
+  <tbody>
+  {% for a in accuracy_data %}
+    <tr>
+      <td><span class="badge badge-{{ a.screen_type }}">{{ {"screen_a": "V+Q", "screen_b": "Momentum", "screen_c": "Dividend", "convergence": "Conv"}.get(a.screen_type, a.screen_type) }}</span></td>
+      <td>{{ a.total_signals }}</td>
+      <td>{{ '%.1f%%'|format(a.win_rate_5d) if a.win_rate_5d else '-' }}</td>
+      <td>{{ '%.1f%%'|format(a.win_rate_10d) if a.win_rate_10d else '-' }}</td>
+      <td>{{ '%.1f%%'|format(a.win_rate_20d) if a.win_rate_20d else '-' }}</td>
+      <td>{{ '%+.2f%%'|format(a.avg_return_10d) if a.avg_return_10d else '-' }}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+
 <!-- 4. セクターヒートマップ -->
 {% if sector_chart %}
 <h2>Sector Heatmap</h2>

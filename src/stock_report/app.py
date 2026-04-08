@@ -342,7 +342,7 @@ def main():
     render_header(market_df, selected_date)
 
     # タブ
-    tab1, tab2, tab3, tab4, tab5 = st.tabs(["概況", "スクリーニング", "ウォッチリスト", "カレンダー", "銘柄詳細"])
+    tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(["概況", "スクリーニング", "精度検証", "ウォッチリスト", "カレンダー", "銘柄詳細"])
 
     with tab1:
         render_overview(market_df, scored, name_map, selected_date)
@@ -351,13 +351,82 @@ def main():
         render_screening(signals, scored, name_map)
 
     with tab3:
-        render_watchlist(name_map, selected_date)
+        render_accuracy()
 
     with tab4:
-        render_calendar(name_map)
+        render_watchlist(name_map, selected_date)
 
     with tab5:
+        render_calendar(name_map)
+
+    with tab6:
         render_stock_detail(name_map)
+
+
+# --- Tab 3: 精度検証 ---
+
+def render_accuracy():
+    from stock_report.analyzer.accuracy import compute_accuracy, compute_accuracy_by_score_band
+
+    st.subheader("Screen Accuracy (Backtest)")
+
+    accuracy = compute_accuracy()
+    if accuracy.empty:
+        st.warning("バックテストデータなし。`uv run python -m stock_report.analyzer.backtest` を実行してね")
+        return
+
+    # スクリーン別の勝率テーブル
+    screen_labels = {"screen_a": "Value+Quality", "screen_b": "Momentum", "screen_c": "Dividend", "convergence": "Convergence"}
+    accuracy["Screen"] = accuracy["screen_type"].map(screen_labels)
+
+    st.dataframe(
+        accuracy[["Screen", "total_signals", "win_rate_5d", "win_rate_10d", "win_rate_20d",
+                  "avg_return_5d", "avg_return_10d", "avg_return_20d"]].rename(columns={
+            "total_signals": "Signals", "win_rate_5d": "Win% 5D", "win_rate_10d": "Win% 10D",
+            "win_rate_20d": "Win% 20D", "avg_return_5d": "Avg 5D", "avg_return_10d": "Avg 10D",
+            "avg_return_20d": "Avg 20D",
+        }),
+        hide_index=True, use_container_width=True,
+    )
+
+    # リターン分布ヒストグラム
+    st.subheader("Return Distribution")
+    try:
+        bt = pd.read_parquet(DATA_DIR / "signals" / "backtest.parquet")
+    except FileNotFoundError:
+        return
+
+    period = st.selectbox("Period", ["5d", "10d", "20d"], index=1)
+    col_name = f"return_{period}"
+
+    fig = px.histogram(
+        bt.dropna(subset=[col_name]), x=col_name, color="screen_type",
+        nbins=50, barmode="overlay", opacity=0.7,
+        labels={col_name: f"Return ({period})", "screen_type": "Screen"},
+        color_discrete_map={"screen_a": "#9B59B6", "screen_b": "#00D4AA", "screen_c": "#E67E22", "convergence": "#FFD93D"},
+    )
+    fig.add_vline(x=0, line_dash="solid", line_color="#FF4444", line_width=1)
+    fig.update_layout(
+        template="plotly_dark", paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+        height=350, margin=dict(l=0, r=0, t=30, b=0),
+    )
+    st.plotly_chart(fig, use_container_width=True, config=CHART_CONFIG)
+
+    # スコア帯別勝率
+    st.subheader("Win Rate by Score Band")
+    score_band = compute_accuracy_by_score_band()
+    if not score_band.empty:
+        fig2 = px.bar(
+            score_band, x="score_band", y=[f"win_rate_{period}"],
+            labels={"value": f"Win Rate ({period})", "score_band": "Score Band"},
+            barmode="group",
+        )
+        fig2.add_hline(y=50, line_dash="dot", line_color="#FF4444", line_width=1, annotation_text="50%")
+        fig2.update_layout(
+            template="plotly_dark", paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+            height=300, margin=dict(l=0, r=0, t=30, b=0), showlegend=False,
+        )
+        st.plotly_chart(fig2, use_container_width=True, config=CHART_CONFIG)
 
 
 # --- Tab 4: ウォッチリスト ---

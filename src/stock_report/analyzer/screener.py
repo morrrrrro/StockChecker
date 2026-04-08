@@ -34,24 +34,26 @@ def screen_a(scored: pd.DataFrame) -> pd.DataFrame:
 
     if has_fscore and not fscore_df.empty:
         # 完全版: Magic Formula + F-Score
-        df = scored.merge(fscore_df[["ticker", "f_score", "earnings_yield", "roc"]], on="ticker", how="inner",
-                          suffixes=("", "_fs"))
-        df = df.dropna(subset=["earnings_yield_fs", "roc"])
+        fs_cols = fscore_df[["ticker", "f_score", "earnings_yield", "roc"]].rename(
+            columns={"earnings_yield": "ey_fs", "roc": "roc_fs", "f_score": "f_score_fs"}
+        )
+        df = scored.merge(fs_cols, on="ticker", how="inner")
+        df = df.dropna(subset=["ey_fs", "roc_fs"])
         if df.empty:
             return _screen_a_fallback(scored)
 
-        ey_threshold = df["earnings_yield_fs"].quantile(0.80)
-        roc_threshold = df["roc"].quantile(0.80)
+        ey_threshold = df["ey_fs"].quantile(0.80)
+        roc_threshold = df["roc_fs"].quantile(0.80)
 
         mask = (
-            (df["earnings_yield_fs"] >= ey_threshold)
-            & (df["roc"] >= roc_threshold)
-            & (df["f_score"] >= 7)
+            (df["ey_fs"] >= ey_threshold)
+            & (df["roc_fs"] >= roc_threshold)
+            & (df["f_score_fs"] >= 7)
         )
         result = df[mask].copy()
         result["screen_type"] = "screen_a"
         result["detail"] = result.apply(
-            lambda r: f"益利回り={r['earnings_yield_fs']:.1f}%, ROC={r['roc']:.1f}%, F-Score={int(r['f_score'])}",
+            lambda r: f"益利回り={r['ey_fs']:.1f}%, ROC={r['roc_fs']:.1f}%, F-Score={int(r['f_score_fs'])}",
             axis=1,
         )
         return result
