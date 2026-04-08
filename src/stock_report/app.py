@@ -230,9 +230,12 @@ def render_screening(signals: pd.DataFrame, scored: pd.DataFrame, name_map: dict
             )
             fig.add_hline(y=50, line_dash="dot", line_color="#444")
             fig.add_vline(x=50, line_dash="dot", line_color="#444")
-            fig.update_layout(**CHART_LAYOUT, height=500,
-                              xaxis=dict(title="Value Score", showgrid=True, gridcolor="rgba(128,128,128,0.1)"),
-                              yaxis=dict(title="Momentum Score", showgrid=True, gridcolor="rgba(128,128,128,0.1)"))
+            fig.update_layout(
+                template="plotly_dark", paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+                height=500, margin=dict(l=0, r=0, t=30, b=0),
+                xaxis=dict(title="Value Score", showgrid=True, gridcolor="rgba(128,128,128,0.1)"),
+                yaxis=dict(title="Momentum Score", showgrid=True, gridcolor="rgba(128,128,128,0.1)"),
+            )
             st.plotly_chart(fig, use_container_width=True, config=CHART_CONFIG)
 
 
