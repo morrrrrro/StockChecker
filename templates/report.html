@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stock Report - {{ report_date }}</title>
+<style>
+  :root {
+    --bg: #0E1117;
+    --bg-card: #1a1a2e;
+    --text: #e0e0e0;
+    --text-muted: #8b8b8b;
+    --up: #FF4444;
+    --down: #4488FF;
+    --accent: #FFD93D;
+    --info: #6C9BCF;
+    --border: #2a2a3e;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    padding: 16px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  h1 { font-size: 1.4rem; margin-bottom: 4px; }
+  h2 {
+    font-size: 1.1rem;
+    color: var(--info);
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 6px;
+    margin: 24px 0 12px;
+  }
+  .date { color: var(--text-muted); font-size: 0.9rem; }
+
+  /* 市場指標カード */
+  .metrics {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 10px;
+    margin: 16px 0;
+  }
+  .metric-card {
+    background: var(--bg-card);
+    border-radius: 8px;
+    padding: 12px;
+    text-align: center;
+  }
+  .metric-label { font-size: 0.75rem; color: var(--text-muted); }
+  .metric-value { font-size: 1.3rem; font-weight: 700; margin: 2px 0; }
+  .metric-delta { font-size: 0.85rem; font-weight: 600; }
+  .delta-up { color: var(--up); }
+  .delta-down { color: var(--down); }
+
+  /* ポイント */
+  .highlights {
+    background: var(--bg-card);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 8px 8px 0;
+    padding: 12px 16px;
+    margin: 12px 0;
+    font-size: 0.95rem;
+  }
+
+  /* タブ */
+  .tabs { display: flex; gap: 0; margin-top: 20px; border-bottom: 1px solid var(--border); }
+  .tab {
+    padding: 8px 16px;
+    cursor: pointer;
+    color: var(--text-muted);
+    border-bottom: 2px solid transparent;
+    font-size: 0.9rem;
+    background: none;
+    border-top: none;
+    border-left: none;
+    border-right: none;
+  }
+  .tab.active { color: var(--info); border-bottom-color: var(--info); }
+  .tab-content { display: none; padding: 16px 0; }
+  .tab-content.active { display: block; }
+
+  /* テーブル */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+    margin: 8px 0;
+  }
+  th {
+    text-align: left;
+    padding: 8px;
+    color: var(--text-muted);
+    border-bottom: 1px solid var(--border);
+    font-weight: 500;
+  }
+  td {
+    padding: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  tr:hover { background: rgba(108, 155, 207, 0.05); }
+
+  /* シグナルバッジ */
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+  .badge-new { background: var(--accent); color: #000; }
+  .badge-strengthening { background: #00D4AA; color: #000; }
+  .badge-stable { background: var(--info); color: #000; }
+  .badge-fading { background: var(--text-muted); color: #000; }
+
+  .badge-screen_a { background: #9B59B6; color: #fff; }
+  .badge-screen_b { background: #00D4AA; color: #000; }
+  .badge-screen_c { background: #E67E22; color: #fff; }
+  .badge-convergence { background: var(--accent); color: #000; }
+
+  /* スコアバー */
+  .score-bar {
+    width: 60px;
+    height: 6px;
+    background: var(--border);
+    border-radius: 3px;
+    display: inline-block;
+    vertical-align: middle;
+    margin-left: 6px;
+  }
+  .score-fill {
+    height: 100%;
+    border-radius: 3px;
+    background: var(--info);
+  }
+
+  /* チャートコンテナ */
+  .chart-container {
+    margin: 12px 0;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  /* フッター */
+  footer {
+    margin-top: 40px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    text-align: center;
+  }
+
+  /* レスポンシブ */
+  @media (max-width: 600px) {
+    .metrics { grid-template-columns: repeat(2, 1fr); }
+    .tabs { overflow-x: auto; }
+    table { font-size: 0.78rem; }
+    td, th { padding: 6px 4px; }
+  }
+</style>
+</head>
+<body>
+
+<h1>Daily Stock Report</h1>
+<p class="date">{{ report_date }} ({{ weekday }})</p>
+
+<!-- 1. 市場環境サマリー -->
+<h2>Market Summary</h2>
+<div class="metrics">
+{% for m in market_metrics %}
+  <div class="metric-card">
+    <div class="metric-label">{{ m.label }}</div>
+    <div class="metric-value">{{ m.value }}</div>
+    <div class="metric-delta {{ 'delta-up' if m.change >= 0 else 'delta-down' }}">
+      {{ '+' if m.change >= 0 else '' }}{{ "%.2f"|format(m.change) }}%
+    </div>
+  </div>
+{% endfor %}
+</div>
+
+<!-- 2. 今日のポイント -->
+{% if highlights %}
+<h2>Highlights</h2>
+<div class="highlights">
+{% for line in highlights %}
+  <p>{{ line }}</p>
+{% endfor %}
+</div>
+{% endif %}
+
+<!-- 3. セクターヒートマップ -->
+{% if sector_chart %}
+<h2>Sector Heatmap</h2>
+<div class="chart-container">
+  {{ sector_chart }}
+</div>
+{% endif %}
+
+<!-- 4. スクリーニング結果 -->
+<h2>Screening Results</h2>
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('all')">All ({{ signals|length }})</button>
+  <button class="tab" onclick="switchTab('screen_a')">Value+Quality</button>
+  <button class="tab" onclick="switchTab('screen_b')">Momentum</button>
+  <button class="tab" onclick="switchTab('screen_c')">Dividend</button>
+  {% if convergence_count > 0 %}
+  <button class="tab" onclick="switchTab('convergence')">Convergence ({{ convergence_count }})</button>
+  {% endif %}
+</div>
+
+<div id="tab-all" class="tab-content active">
+{{ signal_table_html }}
+</div>
+<div id="tab-screen_a" class="tab-content">
+{{ signal_table_a_html }}
+</div>
+<div id="tab-screen_b" class="tab-content">
+{{ signal_table_b_html }}
+</div>
+<div id="tab-screen_c" class="tab-content">
+{{ signal_table_c_html }}
+</div>
+{% if convergence_count > 0 %}
+<div id="tab-convergence" class="tab-content">
+{{ signal_table_conv_html }}
+</div>
+{% endif %}
+
+<!-- 5. スコア分布チャート -->
+{% if scatter_chart %}
+<h2>Score Distribution</h2>
+<div class="chart-container">
+  {{ scatter_chart }}
+</div>
+{% endif %}
+
+<!-- 6. ライフサイクル状況 -->
+{% if lifecycle_data %}
+<h2>Signal Lifecycle</h2>
+<table>
+  <thead>
+    <tr><th>Ticker</th><th>Type</th><th>State</th><th>Days</th><th>First Detected</th></tr>
+  </thead>
+  <tbody>
+  {% for row in lifecycle_data %}
+    <tr>
+      <td><strong>{{ row.ticker }}</strong></td>
+      <td><span class="badge badge-{{ row.signal_type }}">{{ row.signal_type }}</span></td>
+      <td><span class="badge badge-{{ row.current_state }}">{{ row.current_state }}</span></td>
+      <td>{{ row.days_active }}</td>
+      <td>{{ row.first_detected }}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+
+<footer>
+  Generated by StockChecker &mdash; {{ generated_at }}
+</footer>
+
+<script>
+function switchTab(name) {
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  event.target.classList.add('active');
+}
+</script>
+
+</body>
+</html>

@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stock Report - 2026-04-07</title>
+<style>
+  :root {
+    --bg: #0E1117;
+    --bg-card: #1a1a2e;
+    --text: #e0e0e0;
+    --text-muted: #8b8b8b;
+    --up: #FF4444;
+    --down: #4488FF;
+    --accent: #FFD93D;
+    --info: #6C9BCF;
+    --border: #2a2a3e;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    padding: 16px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  h1 { font-size: 1.4rem; margin-bottom: 4px; }
+  h2 {
+    font-size: 1.1rem;
+    color: var(--info);
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 6px;
+    margin: 24px 0 12px;
+  }
+  .date { color: var(--text-muted); font-size: 0.9rem; }
+
+  /* 市場指標カード */
+  .metrics {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 10px;
+    margin: 16px 0;
+  }
+  .metric-card {
+    background: var(--bg-card);
+    border-radius: 8px;
+    padding: 12px;
+    text-align: center;
+  }
+  .metric-label { font-size: 0.75rem; color: var(--text-muted); }
+  .metric-value { font-size: 1.3rem; font-weight: 700; margin: 2px 0; }
+  .metric-delta { font-size: 0.85rem; font-weight: 600; }
+  .delta-up { color: var(--up); }
+  .delta-down { color: var(--down); }
+
+  /* ポイント */
+  .highlights {
+    background: var(--bg-card);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 8px 8px 0;
+    padding: 12px 16px;
+    margin: 12px 0;
+    font-size: 0.95rem;
+  }
+
+  /* タブ */
+  .tabs { display: flex; gap: 0; margin-top: 20px; border-bottom: 1px solid var(--border); }
+  .tab {
+    padding: 8px 16px;
+    cursor: pointer;
+    color: var(--text-muted);
+    border-bottom: 2px solid transparent;
+    font-size: 0.9rem;
+    background: none;
+    border-top: none;
+    border-left: none;
+    border-right: none;
+  }
+  .tab.active { color: var(--info); border-bottom-color: var(--info); }
+  .tab-content { display: none; padding: 16px 0; }
+  .tab-content.active { display: block; }
+
+  /* テーブル */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+    margin: 8px 0;
+  }
+  th {
+    text-align: left;
+    padding: 8px;
+    color: var(--text-muted);
+    border-bottom: 1px solid var(--border);
+    font-weight: 500;
+  }
+  td {
+    padding: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  tr:hover { background: rgba(108, 155, 207, 0.05); }
+
+  /* シグナルバッジ */
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+  .badge-new { background: var(--accent); color: #000; }
+  .badge-strengthening { background: #00D4AA; color: #000; }
+  .badge-stable { background: var(--info); color: #000; }
+  .badge-fading { background: var(--text-muted); color: #000; }
+
+  .badge-screen_a { background: #9B59B6; color: #fff; }
+  .badge-screen_b { background: #00D4AA; color: #000; }
+  .badge-screen_c { background: #E67E22; color: #fff; }
+  .badge-convergence { background: var(--accent); color: #000; }
+
+  /* スコアバー */
+  .score-bar {
+    width: 60px;
+    height: 6px;
+    background: var(--border);
+    border-radius: 3px;
+    display: inline-block;
+    vertical-align: middle;
+    margin-left: 6px;
+  }
+  .score-fill {
+    height: 100%;
+    border-radius: 3px;
+    background: var(--info);
+  }
+
+  /* チャートコンテナ */
+  .chart-container {
+    margin: 12px 0;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  /* フッター */
+  footer {
+    margin-top: 40px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    text-align: center;
+  }
+
+  /* レスポンシブ */
+  @media (max-width: 600px) {
+    .metrics { grid-template-columns: repeat(2, 1fr); }
+    .tabs { overflow-x: auto; }
+    table { font-size: 0.78rem; }
+    td, th { padding: 6px 4px; }
+  }
+</style>
+</head>
+<body>
+
+<h1>Daily Stock Report</h1>
+<p class="date">2026-04-07 (火)</p>
+
+<!-- 1. 市場環境サマリー -->
+<h2>Market Summary</h2>
+<div class="metrics">
+
+  <div class="metric-card">
+    <div class="metric-label">S&P 500</div>
+    <div class="metric-value">6,617</div>
+    <div class="metric-delta delta-up">
+      +0.08%
+    </div>
+  </div>
+
+  <div class="metric-card">
+    <div class="metric-label">Dow Jones</div>
+    <div class="metric-value">46,584</div>
+    <div class="metric-delta delta-down">
+      -0.18%
+    </div>
+  </div>
+
+  <div class="metric-card">
+    <div class="metric-label">NASDAQ</div>
+    <div class="metric-value">22,018</div>
+    <div class="metric-delta delta-up">
+      +0.10%
+    </div>
+  </div>
+
+  <div class="metric-card">
+    <div class="metric-label">USD/JPY</div>
+    <div class="metric-value">159.68</div>
+    <div class="metric-delta delta-down">
+      -0.06%
+    </div>
+  </div>
+
+  <div class="metric-card">
+    <div class="metric-label">US 10Y</div>
+    <div class="metric-value">4.34</div>
+    <div class="metric-delta delta-up">
+      +0.18%
+    </div>
+  </div>
+
+  <div class="metric-card">
+    <div class="metric-label">VIX</div>
+    <div class="metric-value">25.78</div>
+    <div class="metric-delta delta-up">
+      +6.66%
+    </div>
+  </div>
+
+</div>
+
+<!-- 2. 今日のポイント -->
+
+
+<!-- 3. セクターヒートマップ -->
+
+<h2>Sector Heatmap</h2>
+<div class="chart-container">
+  <div>                        <script>window.PlotlyConfig = {MathJaxConfig: 'local'};</script>
+        <script charset="utf-8" src="https://cdn.plot.ly/plotly-3.4.0.min.js" integrity="sha256-KEmPoupLpFyGMyGAiOsiNDbKDKAvxXAn/W+oQa0ZAfk=" crossorigin="anonymous"></script>                <div id="7cad221c-493e-4918-969f-c279366c6cf9" class="plotly-graph-div" style="height:350px; width:100%;"></div>            <script>                window.PLOTLYENV=window.PLOTLYENV || {};                                if (document.getElementById("7cad221c-493e-4918-969f-c279366c6cf9")) {                    Plotly.newPlot(                        "7cad221c-493e-4918-969f-c279366c6cf9",                        [{"branchvalues":"total","customdata":{"dtype":"f8","bdata":"UrgehetR9L+4HoXrUbj2v6RwPQrXo+A\u002frkfhehSu8z\u002fhehSuR+Hav1K4HoXrUei\u002fSOF6FK5H8b+ZmZmZmZnZP3sUrkfhevA\u002fmpmZmZmZyb9xPQrXo3ADQJqZmZmZmeE\u002fj8L1KFyP4j8K16NwPQoDwEjhehSuR+m\u002fKVyPwvUoCsDXo3A9CtfzP\u002fcoXI\u002fC9eg\u002fMzMzMzMzwz8UrkfhehT2P8P1KFyPwuU\u002fXI\u002fC9Shc5z\u002f2KFyPwvXgP+F6FK5H4fI\u002frkfhehSu\u002fz+5HoXrUbiePwrXo3A9Csc\u002frkfhehSuAcC4HoXrUbiuv1K4HoXrUfS\u002fUrgehetR9D+4HoXrUbi+v7kehetRuK6\u002fKVyPwvUozD+uR+F6FK7XP65H4XoUru8\u002fuB6F61G4rr89CtejcD0CwOxRuB6F68G\u002fUrgehetR6D\u002fsUbgehev5P+xRuB6F67G\u002fSOF6FK5H9T9I4XoUrkfRP8P1KFyPwsU\u002fSOF6FK5H6T9mZmZmZmbuP1yPwvUoXN8\u002fH4XrUbge1T\u002fD9Shcj8Lxv6IjAUTyBti\u002fb12b41V5079zNMhDuBDgPzkB7YiRWeI\u002f3od7pKVn6D8ft\u002fW47KPzvxJB\u002fXDlxKC\u002fIJ1QzAwd4j8R44lR5QboP0jhehSuR+k\u002f","shape":"60, 1"},"domain":{"x":[0.0,1.0],"y":[0.0,1.0]},"hovertemplate":"labels=%{label}\u003cbr\u003emarket_cap=%{value}\u003cbr\u003eparent=%{parent}\u003cbr\u003eid=%{id}\u003cbr\u003edaily_return=%{color:.2f%}\u003cextra\u003e\u003c\u002fextra\u003e","ids":["Consumer Defensive\u002f2802.T","Healthcare\u002f4519.T","Healthcare\u002f4568.T","Technology\u002f6857.T","Financial Services\u002f8766.T","Industrials\u002f9022.T","Communication Services\u002f9432.T","Consumer Defensive\u002f4452.T","Industrials\u002f7011.T","Consumer Defensive\u002f2914.T","Consumer Cyclical\u002f4689.T","Industrials\u002f6301.T","Technology\u002f6758.T","Technology\u002f6920.T","Consumer Cyclical\u002f7267.T","Consumer Cyclical\u002f7269.T","Industrials\u002f8001.T","Basic Materials\u002f4063.T","Consumer Cyclical\u002f7203.T","Industrials\u002f8053.T","Financial Services\u002f8306.T","Financial Services\u002f8316.T","Communication Services\u002f6098.T","Industrials\u002f6367.T","Technology\u002f6752.T","Consumer Cyclical\u002f6902.T","Technology\u002f8035.T","Communication Services\u002f9433.T","Consumer Cyclical\u002f9983.T","Consumer Cyclical\u002f4661.T","Consumer Cyclical\u002f5108.T","Basic Materials\u002f5401.T","Communication Services\u002f7974.T","Industrials\u002f8031.T","Industrials\u002f8058.T","Financial Services\u002f8411.T","Industrials\u002f9020.T","Communication Services\u002f9984.T","Real Estate\u002f1925.T","Healthcare\u002f4502.T","Industrials\u002f6503.T","Technology\u002f6861.T","Real Estate\u002f8801.T","Basic Materials\u002f4188.T","Healthcare\u002f4503.T","Energy\u002f5020.T","Industrials\u002f6501.T","Industrials\u002f8002.T","Industrials\u002f9101.T","Communication Services\u002f9434.T","Consumer Defensive","Healthcare","Technology","Financial Services","Industrials","Communication Services","Consumer Cyclical","Basic Materials","Real Estate","Energy"],"labels":["2802.T","4519.T","4568.T","6857.T","8766.T","9022.T","9432.T","4452.T","7011.T","2914.T","4689.T","6301.T","6758.T","6920.T","7267.T","7269.T","8001.T","4063.T","7203.T","8053.T","8306.T","8316.T","6098.T","6367.T","6752.T","6902.T","8035.T","9433.T","9983.T","4661.T","5108.T","5401.T","7974.T","8031.T","8058.T","8411.T","9020.T","9984.T","1925.T","4502.T","6503.T","6861.T","8801.T","4188.T","4503.T","5020.T","6501.T","8002.T","9101.T","9434.T","Consumer Defensive","Healthcare","Technology","Financial Services","Industrials","Communication Services","Consumer Cyclical","Basic Materials","Real Estate","Energy"],"marker":{"coloraxis":"coloraxis","colors":{"dtype":"f8","bdata":"UrgehetR9L+4HoXrUbj2v6RwPQrXo+A\u002frkfhehSu8z\u002fhehSuR+Hav1K4HoXrUei\u002fSOF6FK5H8b+ZmZmZmZnZP3sUrkfhevA\u002fmpmZmZmZyb9xPQrXo3ADQJqZmZmZmeE\u002fj8L1KFyP4j8K16NwPQoDwEjhehSuR+m\u002fKVyPwvUoCsDXo3A9CtfzP\u002fcoXI\u002fC9eg\u002fMzMzMzMzwz8UrkfhehT2P8P1KFyPwuU\u002fXI\u002fC9Shc5z\u002f2KFyPwvXgP+F6FK5H4fI\u002frkfhehSu\u002fz+5HoXrUbiePwrXo3A9Csc\u002frkfhehSuAcC4HoXrUbiuv1K4HoXrUfS\u002fUrgehetR9D+4HoXrUbi+v7kehetRuK6\u002fKVyPwvUozD+uR+F6FK7XP65H4XoUru8\u002fuB6F61G4rr89CtejcD0CwOxRuB6F68G\u002fUrgehetR6D\u002fsUbgehev5P+xRuB6F67G\u002fSOF6FK5H9T9I4XoUrkfRP8P1KFyPwsU\u002fSOF6FK5H6T9mZmZmZmbuP1yPwvUoXN8\u002fH4XrUbge1T\u002fD9Shcj8Lxv6IjAUTyBti\u002fb12b41V5079zNMhDuBDgPzkB7YiRWeI\u002f3od7pKVn6D8ft\u002fW47KPzvxJB\u002fXDlxKC\u002fIJ1QzAwd4j8R44lR5QboP0jhehSuR+k\u002f"}},"name":"","parents":["Consumer Defensive","Healthcare","Healthcare","Technology","Financial Services","Industrials","Communication Services","Consumer Defensive","Industrials","Consumer Defensive","Consumer Cyclical","Industrials","Technology","Technology","Consumer Cyclical","Consumer Cyclical","Industrials","Basic Materials","Consumer Cyclical","Industrials","Financial Services","Financial Services","Communication Services","Industrials","Technology","Consumer Cyclical","Technology","Communication Services","Consumer Cyclical","Consumer Cyclical","Consumer Cyclical","Basic Materials","Communication Services","Industrials","Industrials","Financial Services","Industrials","Communication Services","Real Estate","Healthcare","Industrials","Technology","Real Estate","Basic Materials","Healthcare","Energy","Industrials","Industrials","Industrials","Communication Services","","","","","","","","","",""],"values":{"dtype":"f8","bdata":"AAAAgHudkEIAAADA1amqQgAAAKD4KJNCAAAAgGpDsEIAAADgrEmpQgAAAKDYMo1CAAAAoH4Pp0IAAACA4HWEQgAAAIAmN61CAAAAgBvBo0IAAAAgRWGEQgAAAADARJZCAAAAQNRiskIAAADgof6JQgAAAKD4LJJCAAAAALltiUIAAACg\u002fqaqQgAAACCAuqVCAAAAYC8fxEIAAABA2hqbQgAAAGBYuL1CAAAAIMeEs0IAAAAgCHaiQgAAAIDQj5VCAAAAoOFTmUIAAAAAD0qTQgAAAGAlYrFCAAAAANbPokIAAABALDqzQgAAAEBdxI9CAAAAIAkUkEIAAADgm9uGQgAAAGC\u002ffaJCAAAAgKODsEIAAAAg4jGyQgAAAECyba5CAAAAwHGpjUIAAADA3YyzQgAAAMC8uYZCAAAAoNmwoEIAAADgLNqkQgAAACAJz6pCAAAAAFN6kUIAAABgwa9zQgAAAMCzPZFCAAAA4KWajEIAAADgJRO0QgAAACBhH6JCAAAA4OsSg0IAAADAnbSiQgAAALColrBCAAAAyALHvkIAAABVLcHSQgAAAMQzRtNCAAAA0cg14EIAAACsLhTRQgAAAKduo9RCAAAARF\u002fnrUIAAABgMdecQgAAAOClmoxC"},"type":"treemap"}],                        {"template":{"data":{"barpolar":[{"marker":{"line":{"color":"rgb(17,17,17)","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"barpolar"}],"bar":[{"error_x":{"color":"#f2f5fa"},"error_y":{"color":"#f2f5fa"},"marker":{"line":{"color":"rgb(17,17,17)","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"bar"}],"carpet":[{"aaxis":{"endlinecolor":"#A2B1C6","gridcolor":"#506784","linecolor":"#506784","minorgridcolor":"#506784","startlinecolor":"#A2B1C6"},"baxis":{"endlinecolor":"#A2B1C6","gridcolor":"#506784","linecolor":"#506784","minorgridcolor":"#506784","startlinecolor":"#A2B1C6"},"type":"carpet"}],"choropleth":[{"colorbar":{"outlinewidth":0,"ticks":""},"type":"choropleth"}],"contourcarpet":[{"colorbar":{"outlinewidth":0,"ticks":""},"type":"contourcarpet"}],"contour":[{"colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"type":"contour"}],"heatmap":[{"colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"type":"heatmap"}],"histogram2dcontour":[{"colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"type":"histogram2dcontour"}],"histogram2d":[{"colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"type":"histogram2d"}],"histogram":[{"marker":{"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"histogram"}],"mesh3d":[{"colorbar":{"outlinewidth":0,"ticks":""},"type":"mesh3d"}],"parcoords":[{"line":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"parcoords"}],"pie":[{"automargin":true,"type":"pie"}],"scatter3d":[{"line":{"colorbar":{"outlinewidth":0,"ticks":""}},"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scatter3d"}],"scattercarpet":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scattercarpet"}],"scattergeo":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scattergeo"}],"scattergl":[{"marker":{"line":{"color":"#283442"}},"type":"scattergl"}],"scattermapbox":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scattermapbox"}],"scattermap":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scattermap"}],"scatterpolargl":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scatterpolargl"}],"scatterpolar":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scatterpolar"}],"scatter":[{"marker":{"line":{"color":"#283442"}},"type":"scatter"}],"scatterternary":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scatterternary"}],"surface":[{"colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"type":"surface"}],"table":[{"cells":{"fill":{"color":"#506784"},"line":{"color":"rgb(17,17,17)"}},"header":{"fill":{"color":"#2a3f5f"},"line":{"color":"rgb(17,17,17)"}},"type":"table"}]},"layout":{"annotationdefaults":{"arrowcolor":"#f2f5fa","arrowhead":0,"arrowwidth":1},"autotypenumbers":"strict","coloraxis":{"colorbar":{"outlinewidth":0,"ticks":""}},"colorscale":{"diverging":[[0,"#8e0152"],[0.1,"#c51b7d"],[0.2,"#de77ae"],[0.3,"#f1b6da"],[0.4,"#fde0ef"],[0.5,"#f7f7f7"],[0.6,"#e6f5d0"],[0.7,"#b8e186"],[0.8,"#7fbc41"],[0.9,"#4d9221"],[1,"#276419"]],"sequential":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"sequentialminus":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]},"colorway":["#636efa","#EF553B","#00cc96","#ab63fa","#FFA15A","#19d3f3","#FF6692","#B6E880","#FF97FF","#FECB52"],"font":{"color":"#f2f5fa"},"geo":{"bgcolor":"rgb(17,17,17)","lakecolor":"rgb(17,17,17)","landcolor":"rgb(17,17,17)","showlakes":true,"showland":true,"subunitcolor":"#506784"},"hoverlabel":{"align":"left"},"hovermode":"closest","mapbox":{"style":"dark"},"paper_bgcolor":"rgb(17,17,17)","plot_bgcolor":"rgb(17,17,17)","polar":{"angularaxis":{"gridcolor":"#506784","linecolor":"#506784","ticks":""},"bgcolor":"rgb(17,17,17)","radialaxis":{"gridcolor":"#506784","linecolor":"#506784","ticks":""}},"scene":{"xaxis":{"backgroundcolor":"rgb(17,17,17)","gridcolor":"#506784","gridwidth":2,"linecolor":"#506784","showbackground":true,"ticks":"","zerolinecolor":"#C8D4E3"},"yaxis":{"backgroundcolor":"rgb(17,17,17)","gridcolor":"#506784","gridwidth":2,"linecolor":"#506784","showbackground":true,"ticks":"","zerolinecolor":"#C8D4E3"},"zaxis":{"backgroundcolor":"rgb(17,17,17)","gridcolor":"#506784","gridwidth":2,"linecolor":"#506784","showbackground":true,"ticks":"","zerolinecolor":"#C8D4E3"}},"shapedefaults":{"line":{"color":"#f2f5fa"}},"sliderdefaults":{"bgcolor":"#C8D4E3","bordercolor":"rgb(17,17,17)","borderwidth":1,"tickwidth":0},"ternary":{"aaxis":{"gridcolor":"#506784","linecolor":"#506784","ticks":""},"baxis":{"gridcolor":"#506784","linecolor":"#506784","ticks":""},"bgcolor":"rgb(17,17,17)","caxis":{"gridcolor":"#506784","linecolor":"#506784","ticks":""}},"title":{"x":0.05},"updatemenudefaults":{"bgcolor":"#506784","borderwidth":0},"xaxis":{"automargin":true,"gridcolor":"#283442","linecolor":"#506784","ticks":"","title":{"standoff":15},"zerolinecolor":"#283442","zerolinewidth":2},"yaxis":{"automargin":true,"gridcolor":"#283442","linecolor":"#506784","ticks":"","title":{"standoff":15},"zerolinecolor":"#283442","zerolinewidth":2}}},"coloraxis":{"colorbar":{"title":{"text":"%"},"thickness":15,"len":0.6},"colorscale":[[0.0,"rgb(5,48,97)"],[0.1,"rgb(33,102,172)"],[0.2,"rgb(67,147,195)"],[0.3,"rgb(146,197,222)"],[0.4,"rgb(209,229,240)"],[0.5,"rgb(247,247,247)"],[0.6,"rgb(253,219,199)"],[0.7,"rgb(244,165,130)"],[0.8,"rgb(214,96,77)"],[0.9,"rgb(178,24,43)"],[1.0,"rgb(103,0,31)"]],"cmid":0},"legend":{"tracegroupgap":0},"margin":{"t":30,"l":10,"r":10,"b":10},"font":{"size":11},"paper_bgcolor":"rgba(0,0,0,0)","plot_bgcolor":"rgba(0,0,0,0)","height":350},                        {"displayModeBar": false, "responsive": true}                    )                };            </script>        </div>
+</div>
+
+
+<!-- 4. スクリーニング結果 -->
+<h2>Screening Results</h2>
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('all')">All (14)</button>
+  <button class="tab" onclick="switchTab('screen_a')">Value+Quality</button>
+  <button class="tab" onclick="switchTab('screen_b')">Momentum</button>
+  <button class="tab" onclick="switchTab('screen_c')">Dividend</button>
+  
+</div>
+
+<div id="tab-all" class="tab-content active">
+
+    <table>
+      <thead><tr><th>Ticker</th><th>Screen</th><th>Score</th><th>Detail</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><strong>4503.T</strong></td>
+          <td><span class="badge badge-screen_b">Mom</span></td>
+          <td>68.5
+            <div class="score-bar"><div class="score-fill" style="width:68.5%"></div></div>
+          </td>
+          <td>6Mリターン=+59.5%, RSI=62, 200日線上</td>
+        </tr>
+        <tr>
+          <td><strong>8053.T</strong></td>
+          <td><span class="badge badge-screen_b">Mom</span></td>
+          <td>65.5
+            <div class="score-bar"><div class="score-fill" style="width:65.53333333333333%"></div></div>
+          </td>
+          <td>6Mリターン=+35.7%, RSI=54, 200日線上</td>
+        </tr>
+        <tr>
+          <td><strong>9101.T</strong></td>
+          <td><span class="badge badge-screen_c">Div</span></td>
+          <td>62.6
+            <div class="score-bar"><div class="score-fill" style="width:62.56666666666666%"></div></div>
+          </td>
+          <td>配当=3.2%, PBR=0.87</td>
+        </tr>
+        <tr>
+          <td><strong>8002.T</strong></td>
+          <td><span class="badge badge-screen_b">Mom</span></td>
+          <td>62.3
+            <div class="score-bar"><div class="score-fill" style="width:62.283333333333324%"></div></div>
+          </td>
+          <td>6Mリターン=+55.2%, RSI=57, 200日線上</td>
+        </tr>
+        <tr>
+          <td><strong>8031.T</strong></td>
+          <td><span class="badge badge-screen_b">Mom</span></td>
+          <td>59.3
+            <div class="score-bar"><div class="score-fill" style="width:59.3%"></div></div>
+          </td>
+          <td>6Mリターン=+69.7%, RSI=57, 200日線上</td>
+        </tr>
+        <tr>
+          <td><strong>6920.T</strong></td>
+          <td><span class="badge badge-screen_b">Mom</span></td>
+          <td>58.9
+            <div class="score-bar"><div class="score-fill" style="width:58.86666666666666%"></div></div>
+          </td>
+          <td>6Mリターン=+82.0%, RSI=57, 200日線上</td>
+        </tr>
+        <tr>
+          <td><strong>8411.T</strong></td>
+          <td><span class="badge badge-screen_b">Mom</span></td>
+          <td>57.0
+            <div class="score-bar"><div class="score-fill" style="width:57.03333333333333%"></div></div>
+          </td>
+          <td>6Mリターン=+35.8%, RSI=54, 200日線上</td>
+        </tr>
+        <tr>
+          <td><strong>1925.T</strong></td>
+          <td><span class="badge badge-screen_c">Div</span></td>
+          <td>53.9
+            <div class="score-bar"><div class="score-fill" style="width:53.900000000000006%"></div></div>
+          </td>
+          <td>配当=3.3%, PBR=1.15</td>
+        </tr>
+        <tr>
+          <td><strong>5401.T</strong></td>
+          <td><span class="badge badge-screen_c">Div</span></td>
+          <td>52.6
+            <div class="score-bar"><div class="score-fill" style="width:52.60000000000001%"></div></div>
+          </td>
+          <td>配当=4.1%, PBR=0.59</td>
+        </tr>
+        <tr>
+          <td><strong>8058.T</strong></td>
+          <td><span class="badge badge-screen_b">Mom</span></td>
+          <td>51.8
+            <div class="score-bar"><div class="score-fill" style="width:51.78333333333333%"></div></div>
+          </td>
+          <td>6Mリターン=+52.0%, RSI=55, 200日線上</td>
+        </tr>
+        <tr>
+          <td><strong>5020.T</strong></td>
+          <td><span class="badge badge-screen_b">Mom</span></td>
+          <td>49.3
+            <div class="score-bar"><div class="score-fill" style="width:49.3%"></div></div>
+          </td>
+          <td>6Mリターン=+53.9%, RSI=58, 200日線上</td>
+        </tr>
+        <tr>
+          <td><strong>6752.T</strong></td>
+          <td><span class="badge badge-screen_b">Mom</span></td>
+          <td>49.3
+            <div class="score-bar"><div class="score-fill" style="width:49.26666666666667%"></div></div>
+          </td>
+          <td>6Mリターン=+52.0%, RSI=66, 200日線上</td>
+        </tr>
+        <tr>
+          <td><strong>4502.T</strong></td>
+          <td><span class="badge badge-screen_b">Mom</span></td>
+          <td>49.2
+            <div class="score-bar"><div class="score-fill" style="width:49.23333333333333%"></div></div>
+          </td>
+          <td>6Mリターン=+36.0%, RSI=57, 200日線上</td>
+        </tr>
+        <tr>
+          <td><strong>9984.T</strong></td>
+          <td><span class="badge badge-screen_a">V+Q</span></td>
+          <td>48.8
+            <div class="score-bar"><div class="score-fill" style="width:48.8%"></div></div>
+          </td>
+          <td>益利回り上位, ROE=26.0%</td>
+        </tr></tbody>
+    </table>
+</div>
+<div id="tab-screen_a" class="tab-content">
+
+    <table>
+      <thead><tr><th>Ticker</th><th>Screen</th><th>Score</th><th>Detail</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><strong>9984.T</strong></td>
+          <td><span class="badge badge-screen_a">V+Q</span></td>
+          <td>48.8
+            <div class="score-bar"><div class="score-fill" style="width:48.8%"></div></div>
+          </td>
+          <td>益利回り上位, ROE=26.0%</td>
+        </tr></tbody>
+    </table>
+</div>
+<div id="tab-screen_b" class="tab-content">
+
+    <table>
+      <thead><tr><th>Ticker</th><th>Screen</th><th>Score</th><th>Detail</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><strong>4503.T</strong></td>
+          <td><span class="badge badge-screen_b">Mom</span></td>
+          <td>68.5
+            <div class="score-bar"><div class="score-fill" style="width:68.5%"></div></div>
+          </td>
+          <td>6Mリターン=+59.5%, RSI=62, 200日線上</td>
+        </tr>
+        <tr>
+          <td><strong>8053.T</strong></td>
+          <td><span class="badge badge-screen_b">Mom</span></td>
+          <td>65.5
+            <div class="score-bar"><div class="score-fill" style="width:65.53333333333333%"></div></div>
+          </td>
+          <td>6Mリターン=+35.7%, RSI=54, 200日線上</td>
+        </tr>
+        <tr>
+          <td><strong>8002.T</strong></td>
+          <td><span class="badge badge-screen_b">Mom</span></td>
+          <td>62.3
+            <div class="score-bar"><div class="score-fill" style="width:62.283333333333324%"></div></div>
+          </td>
+          <td>6Mリターン=+55.2%, RSI=57, 200日線上</td>
+        </tr>
+        <tr>
+          <td><strong>8031.T</strong></td>
+          <td><span class="badge badge-screen_b">Mom</span></td>
+          <td>59.3
+            <div class="score-bar"><div class="score-fill" style="width:59.3%"></div></div>
+          </td>
+          <td>6Mリターン=+69.7%, RSI=57, 200日線上</td>
+        </tr>
+        <tr>
+          <td><strong>6920.T</strong></td>
+          <td><span class="badge badge-screen_b">Mom</span></td>
+          <td>58.9
+            <div class="score-bar"><div class="score-fill" style="width:58.86666666666666%"></div></div>
+          </td>
+          <td>6Mリターン=+82.0%, RSI=57, 200日線上</td>
+        </tr>
+        <tr>
+          <td><strong>8411.T</strong></td>
+          <td><span class="badge badge-screen_b">Mom</span></td>
+          <td>57.0
+            <div class="score-bar"><div class="score-fill" style="width:57.03333333333333%"></div></div>
+          </td>
+          <td>6Mリターン=+35.8%, RSI=54, 200日線上</td>
+        </tr>
+        <tr>
+          <td><strong>8058.T</strong></td>
+          <td><span class="badge badge-screen_b">Mom</span></td>
+          <td>51.8
+            <div class="score-bar"><div class="score-fill" style="width:51.78333333333333%"></div></div>
+          </td>
+          <td>6Mリターン=+52.0%, RSI=55, 200日線上</td>
+        </tr>
+        <tr>
+          <td><strong>5020.T</strong></td>
+          <td><span class="badge badge-screen_b">Mom</span></td>
+          <td>49.3
+            <div class="score-bar"><div class="score-fill" style="width:49.3%"></div></div>
+          </td>
+          <td>6Mリターン=+53.9%, RSI=58, 200日線上</td>
+        </tr>
+        <tr>
+          <td><strong>6752.T</strong></td>
+          <td><span class="badge badge-screen_b">Mom</span></td>
+          <td>49.3
+            <div class="score-bar"><div class="score-fill" style="width:49.26666666666667%"></div></div>
+          </td>
+          <td>6Mリターン=+52.0%, RSI=66, 200日線上</td>
+        </tr>
+        <tr>
+          <td><strong>4502.T</strong></td>
+          <td><span class="badge badge-screen_b">Mom</span></td>
+          <td>49.2
+            <div class="score-bar"><div class="score-fill" style="width:49.23333333333333%"></div></div>
+          </td>
+          <td>6Mリターン=+36.0%, RSI=57, 200日線上</td>
+        </tr></tbody>
+    </table>
+</div>
+<div id="tab-screen_c" class="tab-content">
+
+    <table>
+      <thead><tr><th>Ticker</th><th>Screen</th><th>Score</th><th>Detail</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><strong>9101.T</strong></td>
+          <td><span class="badge badge-screen_c">Div</span></td>
+          <td>62.6
+            <div class="score-bar"><div class="score-fill" style="width:62.56666666666666%"></div></div>
+          </td>
+          <td>配当=3.2%, PBR=0.87</td>
+        </tr>
+        <tr>
+          <td><strong>1925.T</strong></td>
+          <td><span class="badge badge-screen_c">Div</span></td>
+          <td>53.9
+            <div class="score-bar"><div class="score-fill" style="width:53.900000000000006%"></div></div>
+          </td>
+          <td>配当=3.3%, PBR=1.15</td>
+        </tr>
+        <tr>
+          <td><strong>5401.T</strong></td>
+          <td><span class="badge badge-screen_c">Div</span></td>
+          <td>52.6
+            <div class="score-bar"><div class="score-fill" style="width:52.60000000000001%"></div></div>
+          </td>
+          <td>配当=4.1%, PBR=0.59</td>
+        </tr></tbody>
+    </table>
+</div>
+
+
+<!-- 5. スコア分布チャート -->
+
+<h2>Score Distribution</h2>
+<div class="chart-container">
+  <div>                            <div id="4e7f93f8-2722-443e-8377-5d7dbcb2762d" class="plotly-graph-div" style="height:400px; width:100%;"></div>            <script>                window.PLOTLYENV=window.PLOTLYENV || {};                                if (document.getElementById("4e7f93f8-2722-443e-8377-5d7dbcb2762d")) {                    Plotly.newPlot(                        "4e7f93f8-2722-443e-8377-5d7dbcb2762d",                        [{"hovertemplate":"\u003cb\u003e%{text}\u003c\u002fb\u003e\u003cbr\u003eValue: %{x:.0f}\u003cbr\u003eMomentum: %{y:.0f}\u003cextra\u003e\u003c\u002fextra\u003e","marker":{"color":{"dtype":"f8","bdata":"AAAAAAAgUUB3d3d3dwdRQHh3d3d3t1BAZ2ZmZmaWUEAiIiIiImJQQP\u002f\u002f\u002f\u002f\u002f\u002ff09AiIiIiIhIT0CHiIiIiEhPQENEREREJE9A3t3d3d3dTkCamZmZmZlOQKqqqqqq6k1AZmZmZmamTUB3d3d3d3dNQO7u7u7ubk1ARERERESETEBmZmZmZgZMQO\u002fu7u7uzktAERERERFRS0CJiIiIiAhLQDQzMzMz80pAiIiIiIiISkDOzMzMzExKQJmZmZmZGUpARERERETkSUCIiIiIiMhJQGZmZmZmpklA3t3d3d1dSUBUVVVVVVVJQGZmZmZm5khAZmZmZmamSEAjIiIiIqJIQN3d3d3dnUhAZmZmZmZmSEB3d3d3d1dIQFRVVVVVVUdA7+7u7u6uRkDd3d3d3R1GQDIzMzMzs0VA3t3d3d2dRUC7u7u7u3tFQO7u7u7ubkVAEBERERHxREDMzMzMzIxEQERERERERERAVVVVVVVVQ0AhIiIiIqJCQN3d3d3dnUJAVlVVVVUVQkC8u7u7u3tBQA=="},"colorbar":{"len":0.6,"thickness":12,"title":{"text":"Score"}},"colorscale":[[0.0,"#440154"],[0.1111111111111111,"#482878"],[0.2222222222222222,"#3e4989"],[0.3333333333333333,"#31688e"],[0.4444444444444444,"#26828e"],[0.5555555555555556,"#1f9e89"],[0.6666666666666666,"#35b779"],[0.7777777777777778,"#6ece58"],[0.8888888888888888,"#b5de2b"],[1.0,"#fde725"]],"showscale":true,"size":{"dtype":"f8","bdata":"AAAAAAAAPkAAAAAAAAA+QAAAAAAAAD5AAAAAAAAAPkAAAAAAAAA+QAAAAAAAAD5AAAAAAAAAPkAAAAAAAAA+QAAAAAAAAD5AAAAAAAAAPkAAAAAAAAA+QAAAAAAAAD5AAAAAAAAAPkAAAAAAAAA+QAAAAAAAAD5AAAAAAAAAPkAAAAAAAAA+QAAAAAAAAD5AAAAAAAAAPkAAAAAAAAA+QAAAAAAAAD5AAAAAAAAAPkAAAAAAAAA+QAAAAAAAAD5AAAAAAAAAPkAAAAAAAAA+QAAAAAAAAD5AAAAAAAAAPkAAAAAAAAA+QAAAAAAAAD5AAAAAAAAAPkAAAAAAAAA+QAAAAAAAAD5AAAAAAAAAPkAAAAAAAAA+QAAAAAAAAD5AH+scJEuHNUAAAAAAAAA+QAAAAAAAAD5AAAAAAAAAPkAAAAAAAAA+QAAAAAAAAD5AAAAAAAAAPkAAAAAAAAA+QAAAAAAAAD5AAAAAAAAAPkAAAAAAAAA+QAAAAAAAAD5AAAAAAAAAPkAAAAAAAAA+QA=="}},"mode":"markers+text","text":["4503.T","8801.T","9433.T","8766.T","8053.T","9432.T","9101.T","8001.T","8002.T","9434.T","2914.T","7203.T","8031.T","6301.T","6920.T","8411.T","6501.T","8316.T","7011.T","8035.T","1925.T","7269.T","5401.T","4063.T","8058.T","8306.T","4519.T","9983.T","9022.T","6857.T","5020.T","6752.T","4502.T","9984.T","6861.T","7267.T","4188.T","6503.T","4568.T","6902.T","6367.T","5108.T","4689.T","4661.T","6758.T","6098.T","9020.T","4452.T","7974.T","2802.T"],"textfont":{"color":"#8b8b8b","size":9},"textposition":"top center","x":{"dtype":"f8","bdata":"q6qqqqqqRUCrqqqqqipOQKuqqqqqqlBAq6qqqqoqT0CrqqqqqqpQQFVVVVVVVVRAq6qqqqoqVkCrqqqqqqpLQKuqqqqqKkdAq6qqqqqqTEBVVVVVVVVNQKuqqqqqKlRAq6qqqqqqR0AAAAAAAABRQAAAAAAAAChAVVVVVVVVTkCrqqqqqqo5QKuqqqqq6lFAq6qqqqqqJkAAAAAAAAA0QKuqqqqqKlVAAAAAAAAAVECrqqqqqqpYQFVVVVVVVUFAVVVVVVXVREAAAAAAAABPQAAAAAAAADZAAAAAAAAAKEAAAAAAAABRQAAAAAAAABBAAAAAAAAAR0BVVVVVVVVHQAAAAAAAAE1AAAAAAAAATECrqqqqqqozQAAAAAAAAFhAVVVVVVXVUECrqqqqqqo8QAAAAAAAAEhAq6qqqqoqVEAAAAAAAABHQAAAAAAAAFFAAAAAAABAUUAAAAAAAAAyQFVVVVVVVUNAAAAAAAAANEBVVVVVVVVNQFVVVVVVVURAAAAAAAAAQ0AAAAAAAAAsQA=="},"y":{"dtype":"f8","bdata":"MzMzMzMzWEAzMzMzMzNJQJqZmZmZmU9ANDMzMzMzUEBmZmZmZmZVQAAAAAAAAEpAAAAAAAAAU0CZmZmZmZlQQM3MzMzMzFdAZmZmZmZmSECamZmZmZlSQAAAAAAAAE5AmpmZmZmZWEAAAAAAAABRQAAAAAAAAFlAzczMzMzMVUDNzMzMzMxKQJqZmZmZmVRAzczMzMzMTkDNzMzMzMxTQM3MzMzMzDRAMzMzMzMzI0CamZmZmZlDQGZmZmZmZlNAAAAAAAAAV0BmZmZmZmZRQM3MzMzMzFFAAAAAAAAAVUDNzMzMzMxCQDMzMzMzM1JAZmZmZmZmV0CamZmZmZlWQDMzMzMzM1ZAmpmZmZmZ+T\u002fNzMzMzMxGQGdmZmZmZiZAmpmZmZmZS0AzMzMzMzNUQJqZmZmZmQlAzMzMzMzMLEAzMzMzMzNNQGdmZmZmZjZAAAAAAAAAMEAAAAAAAAAgQJqZmZmZmRlAmpmZmZmZKUAzMzMzMzM7QAAAAAAAADhAMzMzMzMzE0BmZmZmZmZMQA=="},"type":"scatter"}],                        {"template":{"data":{"barpolar":[{"marker":{"line":{"color":"rgb(17,17,17)","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"barpolar"}],"bar":[{"error_x":{"color":"#f2f5fa"},"error_y":{"color":"#f2f5fa"},"marker":{"line":{"color":"rgb(17,17,17)","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"bar"}],"carpet":[{"aaxis":{"endlinecolor":"#A2B1C6","gridcolor":"#506784","linecolor":"#506784","minorgridcolor":"#506784","startlinecolor":"#A2B1C6"},"baxis":{"endlinecolor":"#A2B1C6","gridcolor":"#506784","linecolor":"#506784","minorgridcolor":"#506784","startlinecolor":"#A2B1C6"},"type":"carpet"}],"choropleth":[{"colorbar":{"outlinewidth":0,"ticks":""},"type":"choropleth"}],"contourcarpet":[{"colorbar":{"outlinewidth":0,"ticks":""},"type":"contourcarpet"}],"contour":[{"colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"type":"contour"}],"heatmap":[{"colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"type":"heatmap"}],"histogram2dcontour":[{"colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"type":"histogram2dcontour"}],"histogram2d":[{"colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"type":"histogram2d"}],"histogram":[{"marker":{"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"histogram"}],"mesh3d":[{"colorbar":{"outlinewidth":0,"ticks":""},"type":"mesh3d"}],"parcoords":[{"line":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"parcoords"}],"pie":[{"automargin":true,"type":"pie"}],"scatter3d":[{"line":{"colorbar":{"outlinewidth":0,"ticks":""}},"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scatter3d"}],"scattercarpet":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scattercarpet"}],"scattergeo":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scattergeo"}],"scattergl":[{"marker":{"line":{"color":"#283442"}},"type":"scattergl"}],"scattermapbox":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scattermapbox"}],"scattermap":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scattermap"}],"scatterpolargl":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scatterpolargl"}],"scatterpolar":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scatterpolar"}],"scatter":[{"marker":{"line":{"color":"#283442"}},"type":"scatter"}],"scatterternary":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scatterternary"}],"surface":[{"colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"type":"surface"}],"table":[{"cells":{"fill":{"color":"#506784"},"line":{"color":"rgb(17,17,17)"}},"header":{"fill":{"color":"#2a3f5f"},"line":{"color":"rgb(17,17,17)"}},"type":"table"}]},"layout":{"annotationdefaults":{"arrowcolor":"#f2f5fa","arrowhead":0,"arrowwidth":1},"autotypenumbers":"strict","coloraxis":{"colorbar":{"outlinewidth":0,"ticks":""}},"colorscale":{"diverging":[[0,"#8e0152"],[0.1,"#c51b7d"],[0.2,"#de77ae"],[0.3,"#f1b6da"],[0.4,"#fde0ef"],[0.5,"#f7f7f7"],[0.6,"#e6f5d0"],[0.7,"#b8e186"],[0.8,"#7fbc41"],[0.9,"#4d9221"],[1,"#276419"]],"sequential":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"sequentialminus":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]},"colorway":["#636efa","#EF553B","#00cc96","#ab63fa","#FFA15A","#19d3f3","#FF6692","#B6E880","#FF97FF","#FECB52"],"font":{"color":"#f2f5fa"},"geo":{"bgcolor":"rgb(17,17,17)","lakecolor":"rgb(17,17,17)","landcolor":"rgb(17,17,17)","showlakes":true,"showland":true,"subunitcolor":"#506784"},"hoverlabel":{"align":"left"},"hovermode":"closest","mapbox":{"style":"dark"},"paper_bgcolor":"rgb(17,17,17)","plot_bgcolor":"rgb(17,17,17)","polar":{"angularaxis":{"gridcolor":"#506784","linecolor":"#506784","ticks":""},"bgcolor":"rgb(17,17,17)","radialaxis":{"gridcolor":"#506784","linecolor":"#506784","ticks":""}},"scene":{"xaxis":{"backgroundcolor":"rgb(17,17,17)","gridcolor":"#506784","gridwidth":2,"linecolor":"#506784","showbackground":true,"ticks":"","zerolinecolor":"#C8D4E3"},"yaxis":{"backgroundcolor":"rgb(17,17,17)","gridcolor":"#506784","gridwidth":2,"linecolor":"#506784","showbackground":true,"ticks":"","zerolinecolor":"#C8D4E3"},"zaxis":{"backgroundcolor":"rgb(17,17,17)","gridcolor":"#506784","gridwidth":2,"linecolor":"#506784","showbackground":true,"ticks":"","zerolinecolor":"#C8D4E3"}},"shapedefaults":{"line":{"color":"#f2f5fa"}},"sliderdefaults":{"bgcolor":"#C8D4E3","bordercolor":"rgb(17,17,17)","borderwidth":1,"tickwidth":0},"ternary":{"aaxis":{"gridcolor":"#506784","linecolor":"#506784","ticks":""},"baxis":{"gridcolor":"#506784","linecolor":"#506784","ticks":""},"bgcolor":"rgb(17,17,17)","caxis":{"gridcolor":"#506784","linecolor":"#506784","ticks":""}},"title":{"x":0.05},"updatemenudefaults":{"bgcolor":"#506784","borderwidth":0},"xaxis":{"automargin":true,"gridcolor":"#283442","linecolor":"#506784","ticks":"","title":{"standoff":15},"zerolinecolor":"#283442","zerolinewidth":2},"yaxis":{"automargin":true,"gridcolor":"#283442","linecolor":"#506784","ticks":"","title":{"standoff":15},"zerolinecolor":"#283442","zerolinewidth":2}}},"shapes":[{"line":{"color":"#444","dash":"dot","width":1},"type":"line","x0":0,"x1":1,"xref":"x domain","y0":50,"y1":50,"yref":"y"},{"line":{"color":"#444","dash":"dot","width":1},"type":"line","x0":50,"x1":50,"xref":"x","y0":0,"y1":1,"yref":"y domain"}],"margin":{"l":10,"r":10,"t":30,"b":10},"font":{"size":11},"xaxis":{"title":{"text":"Value Score"},"showgrid":true,"gridcolor":"rgba(128,128,128,0.1)"},"yaxis":{"title":{"text":"Momentum Score"},"showgrid":true,"gridcolor":"rgba(128,128,128,0.1)"},"paper_bgcolor":"rgba(0,0,0,0)","plot_bgcolor":"rgba(0,0,0,0)","height":400},                        {"displayModeBar": false, "responsive": true}                    )                };            </script>        </div>
+</div>
+
+
+<!-- 6. ライフサイクル状況 -->
+
+<h2>Signal Lifecycle</h2>
+<table>
+  <thead>
+    <tr><th>Ticker</th><th>Type</th><th>State</th><th>Days</th><th>First Detected</th></tr>
+  </thead>
+  <tbody>
+  
+    <tr>
+      <td><strong>5401.T</strong></td>
+      <td><span class="badge badge-screen_c">screen_c</span></td>
+      <td><span class="badge badge-new">new</span></td>
+      <td>2</td>
+      <td>2026-04-07</td>
+    </tr>
+  
+    <tr>
+      <td><strong>6920.T</strong></td>
+      <td><span class="badge badge-screen_b">screen_b</span></td>
+      <td><span class="badge badge-new">new</span></td>
+      <td>2</td>
+      <td>2026-04-07</td>
+    </tr>
+  
+    <tr>
+      <td><strong>4502.T</strong></td>
+      <td><span class="badge badge-screen_b">screen_b</span></td>
+      <td><span class="badge badge-new">new</span></td>
+      <td>2</td>
+      <td>2026-04-07</td>
+    </tr>
+  
+    <tr>
+      <td><strong>8031.T</strong></td>
+      <td><span class="badge badge-screen_b">screen_b</span></td>
+      <td><span class="badge badge-new">new</span></td>
+      <td>2</td>
+      <td>2026-04-07</td>
+    </tr>
+  
+    <tr>
+      <td><strong>4503.T</strong></td>
+      <td><span class="badge badge-screen_b">screen_b</span></td>
+      <td><span class="badge badge-new">new</span></td>
+      <td>2</td>
+      <td>2026-04-07</td>
+    </tr>
+  
+    <tr>
+      <td><strong>6503.T</strong></td>
+      <td><span class="badge badge-screen_b">screen_b</span></td>
+      <td><span class="badge badge-fading">fading</span></td>
+      <td>2</td>
+      <td>2026-04-07</td>
+    </tr>
+  
+    <tr>
+      <td><strong>5020.T</strong></td>
+      <td><span class="badge badge-screen_b">screen_b</span></td>
+      <td><span class="badge badge-new">new</span></td>
+      <td>2</td>
+      <td>2026-04-07</td>
+    </tr>
+  
+    <tr>
+      <td><strong>8058.T</strong></td>
+      <td><span class="badge badge-screen_b">screen_b</span></td>
+      <td><span class="badge badge-new">new</span></td>
+      <td>2</td>
+      <td>2026-04-07</td>
+    </tr>
+  
+    <tr>
+      <td><strong>6752.T</strong></td>
+      <td><span class="badge badge-screen_b">screen_b</span></td>
+      <td><span class="badge badge-new">new</span></td>
+      <td>2</td>
+      <td>2026-04-07</td>
+    </tr>
+  
+    <tr>
+      <td><strong>1925.T</strong></td>
+      <td><span class="badge badge-screen_c">screen_c</span></td>
+      <td><span class="badge badge-new">new</span></td>
+      <td>2</td>
+      <td>2026-04-07</td>
+    </tr>
+  
+    <tr>
+      <td><strong>9984.T</strong></td>
+      <td><span class="badge badge-screen_a">screen_a</span></td>
+      <td><span class="badge badge-new">new</span></td>
+      <td>2</td>
+      <td>2026-04-07</td>
+    </tr>
+  
+    <tr>
+      <td><strong>8411.T</strong></td>
+      <td><span class="badge badge-screen_b">screen_b</span></td>
+      <td><span class="badge badge-new">new</span></td>
+      <td>2</td>
+      <td>2026-04-07</td>
+    </tr>
+  
+    <tr>
+      <td><strong>9101.T</strong></td>
+      <td><span class="badge badge-screen_c">screen_c</span></td>
+      <td><span class="badge badge-new">new</span></td>
+      <td>2</td>
+      <td>2026-04-07</td>
+    </tr>
+  
+    <tr>
+      <td><strong>8002.T</strong></td>
+      <td><span class="badge badge-screen_b">screen_b</span></td>
+      <td><span class="badge badge-new">new</span></td>
+      <td>2</td>
+      <td>2026-04-07</td>
+    </tr>
+  
+    <tr>
+      <td><strong>8053.T</strong></td>
+      <td><span class="badge badge-screen_b">screen_b</span></td>
+      <td><span class="badge badge-new">new</span></td>
+      <td>1</td>
+      <td>2026-04-07</td>
+    </tr>
+  
+  </tbody>
+</table>
+
+
+<footer>
+  Generated by StockChecker &mdash; 2026-04-08 11:39:26
+</footer>
+
+<script>
+function switchTab(name) {
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  event.target.classList.add('active');
+}
+</script>
+
+</body>
+</html>
