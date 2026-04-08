@@ -347,6 +347,20 @@ def generate_report(report_date: date | None = None) -> Path:
     except FileNotFoundError:
         lifecycle_data = []
 
+    # ウォッチリスト・テーゼチェック
+    from stock_report.watchlist import get_holdings, get_watching, check_thesis
+    thesis_alerts = check_thesis(report_date)
+    holdings = get_holdings()
+    watching = get_watching()
+
+    # 保有銘柄に名前を付与
+    for h in holdings:
+        h["name"] = name_map.get(h["ticker"], "")
+    for w in watching:
+        w["name"] = name_map.get(w["ticker"], "")
+    for a in thesis_alerts:
+        a["name"] = name_map.get(a["ticker"], "")
+
     # チャート生成
     sector_chart = _build_sector_chart(report_date, name_map)
     scatter_chart = _build_scatter_chart(scored, name_map) if not scored.empty else None
@@ -363,6 +377,9 @@ def generate_report(report_date: date | None = None) -> Path:
         market_metrics=market_metrics,
         highlights=highlights,
         top_picks=top_picks,
+        thesis_alerts=thesis_alerts,
+        holdings=holdings,
+        watching=watching,
         sector_chart=sector_chart,
         signals=signals.to_dict("records") if not signals.empty else [],
         signal_table_html=_build_signal_table(signals, name_map),

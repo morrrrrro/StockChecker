@@ -342,7 +342,7 @@ def main():
     render_header(market_df, selected_date)
 
     # タブ
-    tab1, tab2, tab3 = st.tabs(["概況", "スクリーニング", "銘柄詳細"])
+    tab1, tab2, tab3, tab4, tab5 = st.tabs(["概況", "スクリーニング", "ウォッチリスト", "カレンダー", "銘柄詳細"])
 
     with tab1:
         render_overview(market_df, scored, name_map, selected_date)
@@ -351,7 +351,128 @@ def main():
         render_screening(signals, scored, name_map)
 
     with tab3:
+        render_watchlist(name_map, selected_date)
+
+    with tab4:
+        render_calendar(name_map)
+
+    with tab5:
         render_stock_detail(name_map)
+
+
+# --- Tab 4: ウォッチリスト ---
+
+def render_watchlist(name_map: dict, selected_date: str):
+    from stock_report.watchlist import get_holdings, get_watching, check_thesis
+
+    # テーゼチェック
+    st.subheader("Thesis Check")
+    alerts = check_thesis(date.fromisoformat(selected_date))
+    if alerts:
+        for alert in alerts:
+            ticker = alert["ticker"]
+            name = name_map.get(ticker, "")
+            pnl = alert.get("pnl_pct")
+            pnl_str = f"({pnl:+.1f}%)" if pnl is not None else ""
+
+            with st.container():
+                st.warning(f"**{ticker} {name}** {pnl_str}")
+                st.caption(f"テーゼ: {alert['thesis']}")
+                for reason in alert["reasons"]:
+                    st.markdown(f"- {reason}")
+    else:
+        st.success("保有銘柄に投資テーゼを変えるべき変化はなし")
+
+    st.divider()
+
+    # 保有銘柄
+    st.subheader("Holdings")
+    holdings = get_holdings()
+    if holdings:
+        for h in holdings:
+            ticker = h["ticker"]
+            name = name_map.get(ticker, "")
+            prices = load_prices(ticker)
+
+            if not prices.empty:
+                latest = prices.iloc[-1]
+                close = latest["close"]
+                buy_price = h.get("buy_price", 0)
+                pnl = (close - buy_price) / buy_price * 100 if buy_price else 0
+
+                col1, col2, col3, col4 = st.columns([2, 1, 1, 1])
+                col1.markdown(f"**{ticker}** {name}")
+                col2.metric("現在値", f"¥{close:,.0f}")
+                col3.metric("損益", f"{pnl:+.1f}%")
+                col4.caption(h.get("thesis", ""))
+
+                # スパークライン
+                spark_data = prices.tail(30)
+                fig = go.Figure(go.Scatter(
+                    x=spark_data["date"], y=spark_data["close"],
+                    mode="lines", line=dict(width=1.5, color="#00D4AA" if pnl >= 0 else "#FF6B6B"),
+                ))
+                # 購入価格の水平線
+                if buy_price:
+                    fig.add_hline(y=buy_price, line_dash="dot", line_color="#FFD93D", line_width=0.8)
+                fig.update_layout(
+                    height=80, margin=dict(l=0, r=0, t=0, b=0),
+                    template="plotly_dark", paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+                    xaxis=dict(visible=False), yaxis=dict(visible=False), showlegend=False,
+                )
+                st.plotly_chart(fig, use_container_width=True, config=CHART_CONFIG)
+                st.divider()
+    else:
+        st.info("保有銘柄なし。config/watchlist.toml で追加してね")
+
+    # 注目銘柄
+    st.subheader("Watching")
+    watching = get_watching()
+    if watching:
+        for w in watching:
+            ticker = w["ticker"]
+            name = name_map.get(ticker, "")
+            reason = w.get("reason", "")
+
+            # シグナルチェック
+            try:
+                signals = load_signals(selected_date)
+                has_signal = ticker in signals["ticker"].values if not signals.empty else False
+            except Exception:
+                has_signal = False
+
+            col1, col2 = st.columns([3, 1])
+            label = f"**{ticker}** {name}"
+            if has_signal:
+                label += " :green[Signal]"
+            col1.markdown(label)
+            col2.caption(reason)
+    else:
+        st.info("注目銘柄なし")
+
+
+# --- Tab 5: カレンダー ---
+
+def render_calendar(name_map: dict):
+    from stock_report.watchlist import get_earnings_calendar, get_all_watchlist_tickers
+
+    st.subheader("Earnings Calendar")
+    st.caption("ウォッチリスト銘柄の決算・配当イベント")
+
+    with st.spinner("決算カレンダー取得中..."):
+        events = get_earnings_calendar()
+
+    if not events:
+        st.info("直近のイベントなし")
+        return
+
+    # テーブル表示
+    df = pd.DataFrame(events)
+    df["name"] = df["ticker"].map(name_map).fillna("")
+    df = df[["date", "ticker", "name", "event"]]
+    df.columns = ["Date", "Ticker", "Name", "Event"]
+
+    st.dataframe(df, hide_index=True, use_container_width=True)
 
 
 if __name__ == "__main__":

@@ -1,12 +1,34 @@
 # 個人ウォッチリスト（保有銘柄・注目銘柄）
 # ユニバース全体は universe.py で自動管理される
-# ここにはテーゼチェック対象の銘柄を登録する
+# ここにはテーゼチェック対象・ポートフォリオ追跡銘柄を登録する
 
 [watchlist]
-# 保有銘柄
-holdings = [
-]
+
+# 保有銘柄（購入価格・テーゼを記録）
+[[watchlist.holdings]]
+ticker = "7203.T"
+buy_price = 3300
+thesis = "EV戦略の転換で中長期成長期待"
+
+[[watchlist.holdings]]
+ticker = "8306.T"
+buy_price = 1800
+thesis = "金利上昇局面での収益改善"
+
+[[watchlist.holdings]]
+ticker = "6758.T"
+buy_price = 3500
+thesis = "エンタメ・半導体のポートフォリオ強化"
 
 # 注目銘柄（買い検討中）
-watching = [
-]
+[[watchlist.watching]]
+ticker = "6920.T"
+reason = "半導体検査装置の需要拡大"
+
+[[watchlist.watching]]
+ticker = "4503.T"
+reason = "パイプライン進展に注目"
+
+[[watchlist.watching]]
+ticker = "8058.T"
+reason = "商社セクターのモメンタム継続"
