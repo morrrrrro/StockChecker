@@ -2,10 +2,12 @@
 
 GitHub Actionsおよびローカルから呼び出される。
 全パイプライン（データ取得→分析→レポート生成）を順次実行する。
+
+ファンダメンタルデータは週1回（月曜）のみ取得する（大量銘柄で時間がかかるため）。
 """
 
 import sys
-from datetime import date, timedelta
+from datetime import date
 from pathlib import Path
 
 # プロジェクトルートをパスに追加（直接実行時用）
@@ -23,28 +25,45 @@ def run_batch(target_date: date | None = None) -> None:
     if target_date is None:
         target_date = date.today()
 
-    print(f"{'='*50}")
+    print(f"{'='*60}")
     print(f"Daily Batch: {target_date}")
-    print(f"{'='*50}")
+    print(f"{'='*60}")
 
     if not is_business_day(target_date):
         print(f"休日のためスキップ ({target_date})")
         return
 
-    # Step 1: データ取得
-    print("\n[1/5] 株価データ取得...")
+    # Step 1: JPX銘柄リスト更新（週1回）
+    if target_date.weekday() == 0:  # 月曜日
+        print("\n[0/6] JPX銘柄リスト更新...")
+        from stock_report.universe import fetch_tse_list
+        fetch_tse_list(force_refresh=True)
+
+    # Step 2: 株価データ取得（全ユニバース）
+    print("\n[1/6] 株価データ取得...")
     from stock_report.fetcher.price import run as fetch_prices
     fetch_prices(days=10)  # 日次実行時は直近10日分を取得（冪等）
 
-    print("\n[2/5] 市場指標取得...")
+    # Step 3: 市場指標取得
+    print("\n[2/6] 市場指標取得...")
     from stock_report.fetcher.market import run as fetch_market
     fetch_market(days=10)
 
-    print("\n[3/5] テクニカル指標算出...")
+    # Step 4: ファンダメンタルデータ取得（週1回 or 差分のみ）
+    if target_date.weekday() == 0:  # 月曜日
+        print("\n[3/6] ファンダメンタルデータ取得（週次）...")
+        from stock_report.fetcher.fundamental import run as fetch_fundamental
+        fetch_fundamental(incremental=True)  # 新規銘柄のみ差分取得
+    else:
+        print("\n[3/6] ファンダメンタルデータ取得... スキップ（週次: 月曜のみ）")
+
+    # Step 5: テクニカル指標算出
+    print("\n[4/6] テクニカル指標算出...")
     from stock_report.analyzer.technical import run as run_technical
     run_technical()
 
-    print("\n[4/5] スクリーニング実行...")
+    # Step 6: スクリーニング実行
+    print("\n[5/6] スクリーニング実行...")
     from stock_report.analyzer.screener import run as run_screener
     run_screener(target_date)
 
@@ -52,13 +71,14 @@ def run_batch(target_date: date | None = None) -> None:
     from stock_report.analyzer.signal import run as run_signal
     run_signal(target_date)
 
-    print("\n[5/5] HTMLレポート生成...")
+    # Step 7: HTMLレポート生成
+    print("\n[6/6] HTMLレポート生成...")
     from stock_report.reporter.html import generate_report
     output_path = generate_report(target_date)
 
-    print(f"\n{'='*50}")
+    print(f"\n{'='*60}")
     print(f"完了: {output_path}")
-    print(f"{'='*50}")
+    print(f"{'='*60}")
 
 
 if __name__ == "__main__":

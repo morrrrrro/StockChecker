@@ -1,28 +1,17 @@
-"""市場指標データ取得（指数・為替・債券利回り）"""
+"""市場指標データ取得（指数・為替・債券・商品・暗号資産）"""
 
 from datetime import date, timedelta
-from pathlib import Path
 
 import pandas as pd
 import yfinance as yf
 
 from stock_report.db import DATA_DIR, append_to_monthly_parquet
-
-CONFIG_PATH = Path(__file__).resolve().parent.parent.parent.parent / "config" / "watchlist.toml"
-
-
-def load_market_config() -> dict[str, str]:
-    """watchlist.tomlから市場指標ティッカーを読み込む"""
-    import tomllib
-
-    with open(CONFIG_PATH, "rb") as f:
-        config = tomllib.load(f)
-    return config["market_indicators"]
+from stock_report.universe import get_market_indicators
 
 
 def fetch_market_indicators(start: date, end: date) -> pd.DataFrame:
     """各市場指標のデータを取得し、縦持ちDataFrameで返す"""
-    indicators = load_market_config()
+    indicators = get_market_indicators()
     print(f"市場指標取得中... {len(indicators)}指標 ({start} ~ {end})")
 
     rows = []
