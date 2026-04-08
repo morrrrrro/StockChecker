@@ -75,16 +75,19 @@ def run_batch(target_date: date | None = None) -> None:
     # Step 6: スクリーニング実行
     print("\n[5/6] スクリーニング実行...")
     from stock_report.analyzer.screener import run as run_screener
-    run_screener(target_date)
+    actual_date_str = run_screener(target_date)
+
+    # 実データの日付でレポート生成（市場が閉まった翌日に実行しても正しい日付を使う）
+    report_date = date.fromisoformat(actual_date_str) if actual_date_str else target_date
 
     # シグナルライフサイクル更新
     from stock_report.analyzer.signal import run as run_signal
-    run_signal(target_date)
+    run_signal(report_date)
 
     # Step 7: HTMLレポート生成
     print("\n[6/6] HTMLレポート生成...")
     from stock_report.reporter.html import generate_report
-    output_path = generate_report(target_date)
+    output_path = generate_report(report_date)
 
     print(f"\n{'='*60}")
     print(f"完了: {output_path}")

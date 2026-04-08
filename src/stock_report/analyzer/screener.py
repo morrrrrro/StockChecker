@@ -168,11 +168,12 @@ def run(target_date: date | None = None) -> None:
     existing_cols = [c for c in output_cols if c in signals.columns]
     signals = signals[existing_cols]
 
-    # 日別Parquetに保存
-    report_date = pd.to_datetime(scored["date"].iloc[0]).strftime("%Y-%m-%d")
-    path = DATA_DIR / "signals" / f"{report_date}.parquet"
+    # 日別Parquetに保存（実データの日付を使用）
+    actual_date = pd.to_datetime(scored["date"].iloc[0]).strftime("%Y-%m-%d")
+    path = DATA_DIR / "signals" / f"{actual_date}.parquet"
     save_parquet(signals, path)
     print(f"  保存完了: {path} ({len(signals)}シグナル)")
+    return actual_date
 
 
 if __name__ == "__main__":
