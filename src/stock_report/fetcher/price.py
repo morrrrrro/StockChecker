@@ -69,7 +69,7 @@ def fetch_prices(tickers: list[str], start: date, end: date) -> pd.DataFrame:
     return result
 
 
-def run(days: int = 30) -> None:
+def run(days: int = 400) -> None:
     """株価データを取得してParquetに保存する"""
     tickers = load_tickers()
     end = date.today()
