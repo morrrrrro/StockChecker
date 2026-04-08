@@ -174,6 +174,42 @@ def get_tse_sector_map() -> dict[str, str]:
     return dict(zip(df["ticker"], df["sector_33"]))
 
 
+# 米国株の企業名マッピング
+US_STOCK_NAMES = {
+    "AAPL": "Apple", "MSFT": "Microsoft", "GOOGL": "Alphabet", "AMZN": "Amazon",
+    "META": "Meta", "NVDA": "NVIDIA", "TSLA": "Tesla", "TSM": "TSMC",
+    "AVGO": "Broadcom", "AMD": "AMD", "INTC": "Intel", "QCOM": "Qualcomm",
+    "ASML": "ASML", "MU": "Micron", "JPM": "JPMorgan", "BAC": "Bank of America",
+    "GS": "Goldman Sachs", "MS": "Morgan Stanley", "V": "Visa", "MA": "Mastercard",
+    "BRK-B": "Berkshire", "JNJ": "J&J", "UNH": "UnitedHealth", "PFE": "Pfizer",
+    "ABBV": "AbbVie", "MRK": "Merck", "LLY": "Eli Lilly", "TMO": "Thermo Fisher",
+    "WMT": "Walmart", "PG": "P&G", "KO": "Coca-Cola", "PEP": "PepsiCo",
+    "COST": "Costco", "MCD": "McDonald's", "NKE": "Nike", "XOM": "Exxon",
+    "CVX": "Chevron", "COP": "ConocoPhillips", "DIS": "Disney", "NFLX": "Netflix",
+    "CMCSA": "Comcast", "T": "AT&T", "VZ": "Verizon", "CAT": "Caterpillar",
+    "BA": "Boeing", "HON": "Honeywell", "GE": "GE", "MMM": "3M", "UPS": "UPS",
+    "CRM": "Salesforce", "ORCL": "Oracle", "ADBE": "Adobe", "NOW": "ServiceNow",
+    "UBER": "Uber", "COIN": "Coinbase", "PLTR": "Palantir", "SQ": "Block",
+    "SHOP": "Shopify", "ZM": "Zoom", "CRWD": "CrowdStrike", "SNOW": "Snowflake",
+    "DDOG": "Datadog",
+}
+
+
+def get_name_map() -> dict[str, str]:
+    """全銘柄の ticker → 企業名 マッピングを返す"""
+    name_map = {}
+
+    # 東証銘柄
+    df = fetch_tse_list()
+    for _, row in df.iterrows():
+        name_map[row["ticker"]] = row["name"]
+
+    # 米国株
+    name_map.update(US_STOCK_NAMES)
+
+    return name_map
+
+
 if __name__ == "__main__":
     # キャッシュ強制更新
     df = fetch_tse_list(force_refresh=True)
