@@ -220,6 +220,8 @@ def render_screening(signals: pd.DataFrame, scored: pd.DataFrame, name_map: dict
         plot_df = scored.dropna(subset=["value_score", "momentum_score"]).copy()
         if not plot_df.empty:
             plot_df["name"] = plot_df["ticker"].map(name_map).fillna(plot_df["ticker"])
+            plot_df["market_cap"] = plot_df["market_cap"].fillna(0).clip(lower=0)
+            plot_df = plot_df[plot_df["market_cap"] > 0]
             fig = px.scatter(
                 plot_df, x="value_score", y="momentum_score",
                 color="composite_score", size="market_cap",
