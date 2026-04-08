@@ -49,13 +49,23 @@ def run_batch(target_date: date | None = None) -> None:
     from stock_report.fetcher.market import run as fetch_market
     fetch_market(days=10)
 
-    # Step 4: ファンダメンタルデータ取得（週1回 or 差分のみ）
-    if target_date.weekday() == 0:  # 月曜日
-        print("\n[3/6] ファンダメンタルデータ取得（週次）...")
+    # Step 4: ファンダメンタルデータ取得（週1回 or 初回 or 差分のみ）
+    from pathlib import Path
+    fundamentals_path = Path("data/fundamentals/latest.parquet")
+    needs_fundamental = target_date.weekday() == 0  # 月曜日
+    if fundamentals_path.exists():
+        import pandas as pd
+        existing_count = len(pd.read_parquet(fundamentals_path))
+        # 銘柄数が少なすぎる場合も取得（ユニバース拡大後の初回対応）
+        if existing_count < 500:
+            needs_fundamental = True
+
+    if needs_fundamental:
+        print("\n[3/6] ファンダメンタルデータ取得...")
         from stock_report.fetcher.fundamental import run as fetch_fundamental
-        fetch_fundamental(incremental=True)  # 新規銘柄のみ差分取得
+        fetch_fundamental(incremental=True)
     else:
-        print("\n[3/6] ファンダメンタルデータ取得... スキップ（週次: 月曜のみ）")
+        print(f"\n[3/6] ファンダメンタルデータ取得... スキップ（次回: 月曜）")
 
     # Step 5: テクニカル指標算出
     print("\n[4/6] テクニカル指標算出...")
