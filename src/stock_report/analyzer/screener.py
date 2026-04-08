@@ -15,20 +15,56 @@ from stock_report.db import DATA_DIR, save_parquet
 
 
 def screen_a(scored: pd.DataFrame) -> pd.DataFrame:
-    """Screen A: バリュー＋クオリティ
+    """Screen A: バリュー＋クオリティ（Greenblatt-Piotroski ハイブリッド）
 
-    簡易版: 益利回り上位20% かつ ROE上位20%
-    Phase 6でF-Score・Magic Formula完全版に拡張する。
+    F-Scoreデータがある場合: 益利回り上位20% + ROC上位20% + F-Score>=7
+    F-Scoreデータがない場合: 益利回り上位20% + ROE上位20%（フォールバック）
     """
     if scored.empty:
         return pd.DataFrame()
 
-    # PERとROEがある銘柄のみ
+    # F-Scoreデータを読み込み
+    fscore_path = DATA_DIR / "fundamentals" / "fscore.parquet"
+    try:
+        fscore_df = pd.read_parquet(fscore_path)
+        has_fscore = True
+    except FileNotFoundError:
+        fscore_df = pd.DataFrame()
+        has_fscore = False
+
+    if has_fscore and not fscore_df.empty:
+        # 完全版: Magic Formula + F-Score
+        df = scored.merge(fscore_df[["ticker", "f_score", "earnings_yield", "roc"]], on="ticker", how="inner",
+                          suffixes=("", "_fs"))
+        df = df.dropna(subset=["earnings_yield_fs", "roc"])
+        if df.empty:
+            return _screen_a_fallback(scored)
+
+        ey_threshold = df["earnings_yield_fs"].quantile(0.80)
+        roc_threshold = df["roc"].quantile(0.80)
+
+        mask = (
+            (df["earnings_yield_fs"] >= ey_threshold)
+            & (df["roc"] >= roc_threshold)
+            & (df["f_score"] >= 7)
+        )
+        result = df[mask].copy()
+        result["screen_type"] = "screen_a"
+        result["detail"] = result.apply(
+            lambda r: f"益利回り={r['earnings_yield_fs']:.1f}%, ROC={r['roc']:.1f}%, F-Score={int(r['f_score'])}",
+            axis=1,
+        )
+        return result
+    else:
+        return _screen_a_fallback(scored)
+
+
+def _screen_a_fallback(scored: pd.DataFrame) -> pd.DataFrame:
+    """Screen A フォールバック: F-Scoreなしの簡易版"""
     df = scored.dropna(subset=["per", "roe"]).copy()
     if df.empty:
         return pd.DataFrame()
 
-    # 益利回りとROEの上位20%
     earnings_yield = 1 / df["per"]
     ey_threshold = earnings_yield.quantile(0.80)
     roe_threshold = df["roe"].quantile(0.80)

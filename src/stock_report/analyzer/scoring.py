@@ -99,9 +99,16 @@ def compute_scores(target_date: date | None = None) -> pd.DataFrame:
     df["pct_dividend_yield"] = pct_rank(df["dividend_yield"])
     df["value_score"] = df[["pct_earnings_yield", "pct_pbr_inv", "pct_dividend_yield"]].mean(axis=1)
 
-    # Quality Score = avg(ROE) ※Phase 6でFCFマージン, F-Scoreを追加
+    # Quality Score = avg(ROE, F-Score)
     df["pct_roe"] = pct_rank(df["roe"])
-    df["quality_score"] = df["pct_roe"]
+    # F-Scoreデータがあれば統合
+    try:
+        fscore_df = pd.read_parquet(DATA_DIR / "fundamentals" / "fscore.parquet")
+        df = df.merge(fscore_df[["ticker", "f_score"]], on="ticker", how="left")
+        df["pct_fscore"] = pct_rank(df["f_score"])
+        df["quality_score"] = df[["pct_roe", "pct_fscore"]].mean(axis=1)
+    except FileNotFoundError:
+        df["quality_score"] = df["pct_roe"]
 
     # Momentum Score = 0.5×6M_return + 0.3×RS_rank + 0.2×above_200dma
     df["pct_return_6m"] = pct_rank(df["return_6m"])
