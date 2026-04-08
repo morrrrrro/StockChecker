@@ -53,9 +53,9 @@ def _build_market_metrics(report_date: date) -> list[dict]:
         import duckdb
         df = duckdb.sql(f"""
             SELECT indicator, value, change_pct
-            FROM 'data/market/*.parquet'
+            FROM read_parquet('data/market/*.parquet', union_by_name=True)
             WHERE date = (
-                SELECT MAX(date) FROM 'data/market/*.parquet' WHERE date <= '{report_date}'
+                SELECT MAX(date) FROM read_parquet('data/market/*.parquet', union_by_name=True) WHERE date <= '{report_date}'
             )
         """).fetchdf()
     except Exception:
@@ -86,14 +86,14 @@ def _build_sector_chart(report_date: date) -> str | None:
             WITH latest AS (
                 SELECT p.ticker, p.close, p.date,
                        f.sector, f.market_cap
-                FROM 'data/prices/*.parquet' p
+                FROM read_parquet('data/prices/*.parquet', union_by_name=True) p
                 JOIN 'data/fundamentals/latest.parquet' f ON p.ticker = f.ticker
                 WHERE p.date <= '{report_date}'
                 QUALIFY ROW_NUMBER() OVER (PARTITION BY p.ticker ORDER BY p.date DESC) = 1
             ),
             prev AS (
                 SELECT p.ticker, p.close as prev_close
-                FROM 'data/prices/*.parquet' p
+                FROM read_parquet('data/prices/*.parquet', union_by_name=True) p
                 JOIN latest l ON p.ticker = l.ticker AND p.date < l.date
                 QUALIFY ROW_NUMBER() OVER (PARTITION BY p.ticker ORDER BY p.date DESC) = 1
             )

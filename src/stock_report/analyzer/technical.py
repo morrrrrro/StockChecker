@@ -45,7 +45,7 @@ def run() -> None:
     """全銘柄のテクニカル指標を算出し、Parquetに書き戻す"""
     print("テクニカル指標算出中...")
 
-    prices = query("SELECT * FROM 'data/prices/*.parquet' ORDER BY ticker, date")
+    prices = query("SELECT * FROM read_parquet('data/prices/*.parquet', union_by_name=True) ORDER BY ticker, date")
     if prices.empty:
         print("株価データなし")
         return

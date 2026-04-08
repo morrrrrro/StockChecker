@@ -33,7 +33,7 @@ def compute_scores(target_date: date | None = None) -> pd.DataFrame:
     # 直近の株価データ取得（target_date以前の最新日）
     latest_prices = duckdb.sql(f"""
         SELECT *
-        FROM 'data/prices/*.parquet'
+        FROM read_parquet('data/prices/*.parquet', union_by_name=True)
         WHERE date <= '{target_date}'
         QUALIFY ROW_NUMBER() OVER (PARTITION BY ticker ORDER BY date DESC) = 1
     """).fetchdf()
@@ -45,7 +45,7 @@ def compute_scores(target_date: date | None = None) -> pd.DataFrame:
     six_months_ago = target_date - timedelta(days=180)
     prices_6m = duckdb.sql(f"""
         SELECT ticker, close as close_6m
-        FROM 'data/prices/*.parquet'
+        FROM read_parquet('data/prices/*.parquet', union_by_name=True)
         WHERE date <= '{six_months_ago}'
         QUALIFY ROW_NUMBER() OVER (PARTITION BY ticker ORDER BY date DESC) = 1
     """).fetchdf()
@@ -72,7 +72,7 @@ def compute_scores(target_date: date | None = None) -> pd.DataFrame:
     # 52週高値からのドローダウン（小さい方が良い = リスク低い）
     high_52w = duckdb.sql(f"""
         SELECT ticker, MAX(high) as high_52w
-        FROM 'data/prices/*.parquet'
+        FROM read_parquet('data/prices/*.parquet', union_by_name=True)
         WHERE date >= '{target_date - timedelta(days=365)}'
         GROUP BY ticker
     """).fetchdf()
@@ -83,7 +83,7 @@ def compute_scores(target_date: date | None = None) -> pd.DataFrame:
     # 出来高（流動性、高い方が良い）
     avg_volume = duckdb.sql(f"""
         SELECT ticker, AVG(volume) as avg_volume_20d
-        FROM 'data/prices/*.parquet'
+        FROM read_parquet('data/prices/*.parquet', union_by_name=True)
         WHERE date >= '{target_date - timedelta(days=30)}'
         GROUP BY ticker
     """).fetchdf()
